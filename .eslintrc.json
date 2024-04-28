@@ -1,0 +1,77 @@
+{
+  "root": true,
+  "env": {
+    "node": true,
+    "es6": true,
+    "es2017": true,
+    "es2020": true
+  },
+  "parser": "@typescript-eslint/parser",
+  "parserOptions": {
+    "ecmaVersion": 2020,
+    "sourceType": "module",
+    "ecmaFeatures": {
+      "impliedStrict": true
+    },
+    "project": "./tsconfig.json",
+    "warnOnUnsupportedTypeScriptVersion": false
+  },
+  "extends": [
+    "eslint:recommended",
+    "plugin:prettier/recommended",
+    "plugin:node/recommended",
+    "plugin:@typescript-eslint/recommended"
+  ],
+  "settings": {
+    "node": {
+      "resolvePaths": ["node_modules", "src"],
+      "tryExtensions": [".ts", ".js", ".json", ".node"]
+    }
+  },
+  "rules": {
+    "prettier/prettier": [
+      "error",
+      { "singleQuote": true, "semi": true },
+      {
+        "usePrettierrc": true
+      }
+    ],
+    "quotes": ["error", "single", { "avoidEscape": true }],
+    "indent": ["off", 2],
+    "curly": "error",
+    "comma-dangle": ["error", "only-multiline"],
+    "max-len": ["error", { "code": 120, "ignoreComments": true }],
+    "eol-last": ["error", "always"],
+    "eqeqeq": "error",
+    "prefer-const": "error",
+    "prefer-destructuring": "error",
+    "prefer-arrow-callback": ["error", { "allowNamedFunctions": true, "allowUnboundThis": true }],
+    "prefer-rest-params": "error",
+    "prefer-spread": "error",
+    "prefer-template": "error",
+    "object-curly-spacing": ["error", "always"],
+    "no-var": "error",
+    "no-use-before-define": "error",
+    "node/no-unsupported-features/es-syntax": ["error", { "ignores": ["modules"] }],
+    "node/no-extraneous-import": "error",
+    "@typescript-eslint/no-unused-vars": ["error", { "argsIgnorePattern": "^_" }],
+    "node/no-missing-import": [
+      "error",
+      {
+        "allowModules": ["@teamliquid-dev/liquipedia-app-api-specs-ts"]
+      }
+    ],
+    "@typescript-eslint/no-extra-semi": "off"
+  },
+  "reportUnusedDisableDirectives": true,
+  "ignorePatterns": ["scripts", "*.graphql"],
+  "overrides": [
+    {
+      "files": ["src/**/__tests__/**/*", "smoketests/*"],
+      "env": { "jest": true },
+      "rules": {
+        "node/no-unpublished-import": "off"
+      }
+    }
+  ]
+}
