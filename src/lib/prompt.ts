@@ -1,12 +1,16 @@
 import { QueryResponse } from 'chromadb';
 import _ from 'lodash';
+import { find } from '../db/mongo/queries/find';
+import { ConversationModel } from '../model/conversation';
 import { PromptContext } from './types';
 
 export class Prompt {
   private query: string;
   private prompt: string;
+  private chatId: string;
   private context: PromptContext[];
-  constructor(query: string, context: QueryResponse) {
+  constructor(chatId: string, query: string, context: QueryResponse) {
+    this.chatId = chatId;
     this.query = query;
     this.context = this.buildContext(context);
     this.prompt = '';
@@ -33,6 +37,10 @@ export class Prompt {
       {data: string, id: string} \n
       where data is the context and id is the id of the collection \n
 
+      Chat history is given under the key "History" to provide context of older conversations \n
+      It is in the format {query: string, response: string} \n
+      where query is the question and response is the answer \n
+
       Reply in the json format {"response":"response to the question",sources:["source1","source2"]}
       Here "source1" and "source2" are the ids of the sources that contain the answer \n`;
   }
@@ -53,6 +61,20 @@ export class Prompt {
     Context: ${JSON.stringify(this.context)}\n`;
   }
 
+  private async addHistory(): Promise<void> {
+    const conversations = await find(
+      ConversationModel,
+      { chat: this.chatId },
+      { sort: { createdAt: -1 }, select: 'query response' },
+    );
+    this.prompt = `${[this.prompt]}\n
+    History: ${JSON.stringify(
+      conversations?.map(c => {
+        return { query: c.query, response: c.response };
+      }),
+    )}\n`;
+  }
+
   private validate() {
     if (this.query === '') {
       throw '400: Empty query';
@@ -62,12 +84,13 @@ export class Prompt {
     }
   }
 
-  public generate(): string {
+  public async generate(): Promise<string> {
     this.validate();
     this.addInstructions();
     this.addGuardRails();
     this.addQuery();
     this.addContext();
+    await this.addHistory();
     return this.prompt;
   }
 }

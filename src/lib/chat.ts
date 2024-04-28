@@ -75,7 +75,7 @@ export class ChatFactory {
     }
     const ragSources = await queryCollection(queryProps.query, collection);
 
-    const promptBuilder = new Prompt(queryProps.query, ragSources);
+    const promptBuilder = new Prompt(queryProps.id, queryProps.query, ragSources);
     const llm = new LLM(promptBuilder);
     const llmResponse = await llm.generate();
     void ConversationFactory.create({

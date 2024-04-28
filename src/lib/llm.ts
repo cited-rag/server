@@ -1,6 +1,7 @@
 import Joi from 'joi';
 import _ from 'lodash';
 import { LLMSource } from '../model/conversation';
+import logger from '../utils/logger';
 import { vertexAI } from '../utils/vertex';
 import { Prompt } from './prompt';
 import { LLMRes, QueryRes } from './types';
@@ -12,7 +13,7 @@ export class LLM {
   }
 
   public async generate(): Promise<QueryRes> {
-    const prompt = this.prompt.generate();
+    const prompt = await this.prompt.generate();
     const response = await vertexAI.generate(prompt);
     const responseJSON = this.buildJsonResponse(response);
     const sources = await this.buildLLMSources(responseJSON.sources);
@@ -29,6 +30,7 @@ export class LLM {
       Joi.assert(jsonResponse, validationSchema);
       return jsonResponse;
     } catch (err) {
+      logger.info(response);
       throw `400: Invalid LLM response`;
     }
   }
