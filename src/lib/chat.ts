@@ -7,11 +7,15 @@ import { create as mongoCreate } from '../db/mongo/queries/create';
 import { deleteMany, deleteOne } from '../db/mongo/queries/delete';
 import { find, findById, findOne } from '../db/mongo/queries/find';
 import { EnforcedDoc } from '../db/mongo/queries/types';
+import { updateOne } from '../db/mongo/queries/update';
 import { Chat, ChatModel } from '../model/chat';
+import { ConversationModel } from '../model/conversation';
 import { Source, SourceModel } from '../model/source';
 import { User } from '../model/user';
-import { vertexAI } from '../utils/vertex';
-import { QueryProps } from './types';
+import { ConversationFactory } from './conversations';
+import { LLM } from './llm';
+import { Prompt } from './prompt';
+import { QueryProps, QueryRes } from './types';
 
 export class ChatFactory {
   public static async create(user: User): Promise<Chat> {
@@ -33,6 +37,7 @@ export class ChatFactory {
   static async delete(id: string): Promise<boolean> {
     await removeCollection(id);
     await deleteMany(SourceModel, { chat: id });
+    await deleteMany(ConversationModel, { chat: id });
     const deleteStats = await deleteOne(ChatModel, { _id: id });
     return deleteStats.deletedCount > 1;
   }
@@ -58,19 +63,27 @@ export class ChatFactory {
     return res === null ? [] : res;
   }
 
-  static async query(queryProps: QueryProps): Promise<string> {
+  static async updateName(query: string): Promise<Chat> {
+    return updateOne(ChatModel, { query }, { name: query }) as Promise<Chat>;
+  }
+
+  static async query(queryProps: QueryProps): Promise<QueryRes> {
+    const chat = await ChatFactory.getById(queryProps.id);
     const collection = (await findCollection(queryProps.id)) as Collection;
+    if (collection === undefined) {
+      throw `400: Collection not found`;
+    }
     const ragSources = await queryCollection(queryProps.query, collection);
-    const prompt = `
-    Instructions: \n
-    Answer the question with the context given below \n, 
-    If the context does not contain the answer, answer "I don't know" \n 
-    If the question is not relevant to the context, answer "I don't know"
-    Question: ${queryProps.query}\n
-    Context: ${ragSources.documents}
-    `;
-    // TODO: get back a json with the {response,sources given the ids}
-    const response = await vertexAI.generate(prompt);
-    return response;
+
+    const promptBuilder = new Prompt(queryProps.query, ragSources);
+    const llm = new LLM(promptBuilder);
+    const llmResponse = await llm.generate();
+    void ConversationFactory.create({
+      chat: chat,
+      query: queryProps.query,
+      response: llmResponse,
+    });
+    void ChatFactory.updateName(queryProps.query);
+    return llmResponse;
   }
 }
