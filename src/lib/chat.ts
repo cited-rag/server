@@ -9,13 +9,13 @@ import { find, findById, findOne } from '../db/mongo/queries/find';
 import { EnforcedDoc } from '../db/mongo/queries/types';
 import { updateOne } from '../db/mongo/queries/update';
 import { Chat, ChatModel } from '../model/chat';
-import { ConversationModel } from '../model/conversation';
+import { Conversation, ConversationModel } from '../model/conversation';
 import { Source, SourceModel } from '../model/source';
 import { User } from '../model/user';
 import { ConversationFactory } from './conversations';
 import { LLM } from './llm';
 import { Prompt } from './prompt';
-import { QueryProps, QueryRes } from './types';
+import { QueryProps } from './types';
 
 export class ChatFactory {
   public static async create(user: User): Promise<Chat> {
@@ -67,7 +67,7 @@ export class ChatFactory {
     return updateOne(ChatModel, { query }, { name: query }) as Promise<Chat>;
   }
 
-  static async query(queryProps: QueryProps): Promise<QueryRes> {
+  static async query(queryProps: QueryProps): Promise<Conversation | null> {
     const chat = await ChatFactory.getById(queryProps.id);
     const collection = (await findCollection(queryProps.id)) as Collection;
     if (collection === undefined) {
@@ -78,12 +78,16 @@ export class ChatFactory {
     const promptBuilder = new Prompt(queryProps.id, queryProps.query, ragSources);
     const llm = new LLM(promptBuilder);
     const llmResponse = await llm.generate();
-    void ConversationFactory.create({
+    const conversation = await ConversationFactory.create({
       chat: chat,
       query: queryProps.query,
       response: llmResponse,
     });
     void ChatFactory.updateName(queryProps.query);
-    return llmResponse;
+    return conversation;
+  }
+
+  static async getConversations(id: string): Promise<Conversation[]> {
+    return find<Conversation>(ConversationModel, { chat: id }) as Promise<Conversation[]>;
   }
 }

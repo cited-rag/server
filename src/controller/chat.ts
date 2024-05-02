@@ -31,6 +31,11 @@ export async function queryChat(ctx: DefaultContext, next: Next) {
   next();
 }
 
+export async function getConversations(ctx: DefaultContext, next: Next) {
+  ctx.body = await ChatFactory.getConversations(ctx.request.body.id);
+  next();
+}
+
 export default resource([
   {
     path: '/',
@@ -72,6 +77,15 @@ export default resource([
     schema: Joi.object({
       id: Joi.string().required(),
       query: Joi.string().required(),
+    }),
+    security: [verifyJWT, checkUserOwnsChat],
+  },
+  {
+    path: '/conversations',
+    controller: getConversations,
+    method: Methods.GET,
+    schema: Joi.object({
+      id: Joi.string().required(),
     }),
     security: [verifyJWT, checkUserOwnsChat],
   },
