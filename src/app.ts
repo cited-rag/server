@@ -24,7 +24,7 @@ app.use(
 app.use(helmet());
 app.use(
 	cors({
-		origin: "http://localhost:3000", // replace with your client app's URL
+		origin: process.env.frontend_url, // replace with your client app's URL
 		allowMethods: ["GET,HEAD,PUT,PATCH,POST,DELETE"],
 		allowHeaders: ["Content-Type", "Authorization"],
 		credentials: true,
