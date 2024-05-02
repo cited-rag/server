@@ -21,8 +21,7 @@ services:
     image: cited:prod
     restart: always
     ports:
-      - 4000:4000
-      - 4001:4001
+      - 8080:8080
     environment:
       NODE_ENV: production
       CHROMA_URL: http://chroma:8000
