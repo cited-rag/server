@@ -3,3 +3,4 @@ error.log
 info.log
 node_modules
 config/development.json
+config/production.json
