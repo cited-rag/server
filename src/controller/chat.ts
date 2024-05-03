@@ -83,7 +83,7 @@ export default resource([
 	{
 		path: "/conversations",
 		controller: getConversations,
-		method: Methods.GET,
+		method: Methods.POST,
 		schema: Joi.object({
 			id: Joi.string().required(),
 		}),
