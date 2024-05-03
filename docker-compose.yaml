@@ -1,0 +1,43 @@
+version: '3.7'
+services:
+  router:
+    image: mongo:4.2
+    restart: always
+    container_name: router
+    expose:
+      - 27017
+    networks:
+      - apiNetwork
+
+  chroma:
+    image: chromadb/chroma
+    restart: always
+    ports:
+      - 8000:8000
+    networks:
+      - apiNetwork
+
+  api:
+    image: cited:prod
+    restart: always
+    ports:
+      - 8080:8080
+    environment:
+      NODE_ENV: production
+      CHROMA_URL: http://chroma:8000
+      MONGO_URL: mongodb://router:27017/?directConnection=true&readPreference=primary
+    volumes:
+      - ./keys:/app/keys:ro
+      - ./config:/app/config:ro
+    networks:
+      - apiNetwork
+    depends_on:
+      - router
+      - chroma
+
+networks:
+  apiNetwork:
+    driver: bridge
+
+volumes:
+  data_mongo:
