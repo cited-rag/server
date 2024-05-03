@@ -5,3 +5,7 @@ node_modules
 config/development.json
 config/production.json
 build
+cert
+certs
+certs/cert.pem
+certs/key.pem
