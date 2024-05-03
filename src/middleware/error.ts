@@ -15,6 +15,8 @@ export default function (): Middleware {
             logger.error(ctx.body);
           }
         }
+      } else {
+        logger.error(err);
       }
     }
   };
