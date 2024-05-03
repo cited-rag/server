@@ -30,7 +30,7 @@ const ConversationSchema = new Schema(
     owner: Schema.Types.ObjectId,
     query: String,
     response: String,
-    source: [LLMSourceSchema],
+    sources: [LLMSourceSchema],
   },
   getMongoSchemaOptions(true, true),
 );
