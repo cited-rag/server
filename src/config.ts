@@ -57,12 +57,6 @@ const config = convict({
       env: 'KEEP_ALIVE',
       arg: 'keep_alive',
     },
-    passphrase: {
-      format: String,
-      default: 'citedrag',
-      env: 'PASSPHRASE',
-      arg: 'passphrase',
-    },
   },
   jwt: {
     ttl: {
