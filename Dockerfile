@@ -9,12 +9,15 @@ WORKDIR /app
 
 COPY . .
 
+RUN apk add --update py-pip
+
 RUN npm install -g typescript
 
 RUN npm ci && \
     npm run build && \
     npm i -g pm2 && \
-    npm cache clean --force
+    npm cache clean --force \
+    pip install chromadb
 
 EXPOSE 8080 8080
 
