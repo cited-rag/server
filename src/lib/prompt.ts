@@ -2,6 +2,7 @@ import { QueryResponse } from 'chromadb';
 import _ from 'lodash';
 import { find } from '../db/mongo/queries/find';
 import { ConversationModel } from '../model/conversation';
+import { ServerError } from '../utils/error';
 import { PromptContext } from './types';
 
 export class Prompt {
@@ -77,10 +78,18 @@ export class Prompt {
 
   private validate() {
     if (this.query === '') {
-      throw '400: Empty query';
+      throw new ServerError({
+        status: 400,
+        message: 'Empty query',
+        description: `No query was sent in the request`,
+      });
     }
     if (this.context === undefined) {
-      throw '400: Empty context';
+      throw new ServerError({
+        status: 400,
+        message: 'Empty context',
+        description: `No context was found in the request`,
+      });
     }
   }
 

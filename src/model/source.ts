@@ -1,9 +1,15 @@
 import { Schema, model } from 'mongoose';
 import { getMongoSchemaOptions } from './common';
 
-export enum SourceType {
+export enum DataType {
+  NONE = 'none',
+  PDF = 'pdf',
+  TEXT = 'text',
+}
+
+export enum OriginType {
+  NONE = 'none',
   URL = 'url',
-  FILE = 'file',
 }
 
 export enum SourceStatus {
@@ -12,22 +18,37 @@ export enum SourceStatus {
   LOADING = 'loading',
 }
 
+export type Origin = {
+  target: string;
+  type: OriginType;
+};
+
 export type Source = {
   id: string;
   target: string;
-  type: SourceType;
+  dataType: DataType;
   chat: string;
   owner: string;
   status: SourceStatus;
+  origin: Origin[];
 };
+
+const OriginSchema = new Schema(
+  {
+    target: String,
+    type: { type: String, enum: OriginType },
+  },
+  getMongoSchemaOptions(),
+);
 
 const SourceSchema = new Schema(
   {
     target: String,
-    type: { type: String, enum: SourceType },
+    dataType: { type: String, enum: DataType },
     chat: Schema.Types.ObjectId,
     owner: Schema.Types.ObjectId,
     status: { type: String, enum: SourceStatus },
+    origin: [OriginSchema],
   },
   getMongoSchemaOptions(true, true),
 );

@@ -1,5 +1,5 @@
 import { Chat } from '../model/chat';
-import { LLMSource } from '../model/conversation';
+import { PDFMetadata } from './data/types';
 
 export type JWTPayload = {
   exp: number;
@@ -18,7 +18,7 @@ export type PromptContext = {
 
 export type QueryRes = {
   response: string;
-  sources: LLMSource[];
+  sources: string[];
 };
 
 export type LLMRes = {
@@ -31,3 +31,6 @@ export type ConversationCreateProps = {
   response: QueryRes;
   chat: Chat;
 };
+
+export type SourceMetadata = PDFMetadata;
+export type SourceMetadataResponse = Record<string, SourceMetadata>;
