@@ -27,7 +27,7 @@ export async function deleteChat(ctx: DefaultContext, next: Next) {
 }
 
 export async function queryChat(ctx: DefaultContext, next: Next) {
-  ctx.body = await chatFactory.query(ctx.request.body);
+  ctx.body = { response: chatFactory.query(ctx.request.body) };
   next();
 }
 

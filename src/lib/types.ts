@@ -21,11 +21,6 @@ export type QueryRes = {
   sources: string[];
 };
 
-export type LLMRes = {
-  response: string;
-  sources: string[];
-};
-
 export type ConversationCreateProps = {
   query: string;
   response: QueryRes;

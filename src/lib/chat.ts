@@ -1,4 +1,5 @@
 import { Collection } from 'chromadb';
+import Joi from 'joi';
 import { createCollection } from '../db/chroma/queries/create';
 import { removeCollection } from '../db/chroma/queries/delete';
 import { findByIds, findCollection } from '../db/chroma/queries/find';
@@ -16,7 +17,7 @@ import { ServerError } from '../utils/error';
 import { conversationFactory } from './conversations';
 import { LLM } from './llm';
 import { Prompt } from './prompt';
-import { QueryProps, SourceMetadata, SourceMetadataResponse } from './types';
+import { QueryProps, QueryRes, SourceMetadata, SourceMetadataResponse } from './types';
 
 class ChatFactory {
   public async create(user: User): Promise<Chat> {
@@ -80,25 +81,53 @@ class ChatFactory {
     return res === null ? [] : res;
   }
 
-  async updateName(query: string): Promise<Chat> {
-    return updateOne(ChatModel, { query }, { name: query }) as Promise<Chat>;
+  async updateName(chat: Chat, query: string): Promise<Chat> {
+    //TODO: send a websocket update on name change
+    if (chat.name === '') {
+      updateOne(ChatModel, { query }, { name: query }) as Promise<Chat>;
+    }
+    return chat;
   }
 
-  async query(queryProps: QueryProps): Promise<Conversation | null> {
+  private buildJsonResponse(response: string): QueryRes {
+    const validationSchema = Joi.object({
+      response: Joi.string().required(),
+      sources: Joi.array().items(Joi.string()).required(),
+    });
+    try {
+      const jsonResponse = JSON.parse(response) as QueryRes;
+      Joi.assert(jsonResponse, validationSchema);
+      return jsonResponse;
+    } catch (err) {
+      throw new ServerError({
+        status: 400,
+        message: 'Invalid LLM response',
+        description: `LLM response is not valid: ${err}`,
+      });
+    }
+  }
+
+  private async makeQuery(queryProps: QueryProps): Promise<void> {
     const chat = await this.getById(queryProps.id);
     const collection = await this.getVector(queryProps.id);
     const ragSources = await queryCollection(queryProps.query, collection);
 
     const promptBuilder = new Prompt(queryProps.id, queryProps.query, ragSources);
-    const llm = new LLM(promptBuilder);
+    const llm = new LLM(promptBuilder, chat.owner);
     const llmResponse = await llm.generate();
+    const jsonResponse = this.buildJsonResponse(llmResponse);
     const conversation = await conversationFactory.create({
       chat: chat,
       query: queryProps.query,
-      response: llmResponse,
+      response: jsonResponse,
     });
-    void this.updateName(queryProps.query);
-    return conversation;
+    //TODO: send a websocket update on new conversation
+    void this.updateName(chat, queryProps.query);
+  }
+
+  query(queryProps: QueryProps): boolean {
+    void this.makeQuery(queryProps);
+    return true;
   }
 
   async getConversations(id: string): Promise<Conversation[]> {

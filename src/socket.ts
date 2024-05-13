@@ -5,7 +5,7 @@ import { verifyJWTSocket } from './middleware/auth';
 import { ServerError } from './utils/error';
 import logger from './utils/logger';
 
-export let io: Server | null = null;
+export let io: Server = {} as Server;
 
 export function registerSocketServer(server: http.Server) {
   io = new Server(server, {

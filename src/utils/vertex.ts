@@ -1,20 +1,39 @@
+import Stream from 'stream';
 import config from '../config';
 
-const { GoogleGenerativeAI } = require('@google/generative-ai');
+import {
+  GenerateContentCandidate,
+  GenerateContentStreamResult,
+  GenerativeModel,
+  GoogleGenerativeAI,
+} from '@google/generative-ai';
 
 class VertexAI {
-  private model: unknown;
+  private model: GenerativeModel;
   constructor() {
     const genAI = new GoogleGenerativeAI(config.get('google.key'));
-    this.model = genAI.getGenerativeModel({ model: 'gemini-pro' });
+    this.model = genAI.getGenerativeModel({ model: 'gemini-pro' }, { apiVersion: 'v1beta' });
   }
 
-  //TODO: make async/streaming
-  public async generate(prompt: string): Promise<string> {
-    const result = await (this.model as any).generateContent(prompt);
-    const response = await result.response;
-    const text = response.text();
-    return text;
+  private async parseStream(
+    response: GenerateContentStreamResult,
+    responseStream: Stream.Readable,
+  ): Promise<void> {
+    for await (const item of response.stream) {
+      responseStream.push(
+        (item?.candidates as unknown as GenerateContentCandidate[])[0].content.parts[0].text,
+      );
+    }
+    responseStream.push(null);
+  }
+
+  public async generate(prompt: string): Promise<Stream.Readable> {
+    const responseStream = new Stream.Readable({ read: () => {} });
+    const streamListener = await (this.model as any).generateContentStream({
+      contents: [{ role: 'user', parts: [{ text: prompt }] }],
+    });
+    void this.parseStream(streamListener, responseStream);
+    return responseStream;
   }
 }
 
