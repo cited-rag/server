@@ -3,7 +3,7 @@ import _ from 'lodash';
 import { find } from '../../db/mongo/queries/find';
 import { ConversationModel } from '../../model/conversation';
 import { ServerError } from '../../utils/error';
-import { Prompt, PromptContext } from '../types';
+import { Prompt, PromptContext } from './types';
 
 export class QueryPrompt implements Prompt {
   private query: string;

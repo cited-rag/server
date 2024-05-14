@@ -1,14 +1,5 @@
-import Stream from 'stream';
 import { Chat } from '../model/chat';
 import { PDFMetadata } from './data/types';
-
-export interface LLM {
-  generate(): Promise<Stream.Readable>;
-}
-
-export interface Prompt {
-  generate(): Promise<string>;
-}
 
 export type JWTPayload = {
   exp: number;
@@ -18,11 +9,6 @@ export type JWTPayload = {
 export type QueryProps = {
   id: string;
   query: string;
-};
-
-export type PromptContext = {
-  data: string;
-  id: string;
 };
 
 export type QueryRes = {
