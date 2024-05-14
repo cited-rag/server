@@ -4,7 +4,8 @@ import config from '../../config';
 import { addDocs } from '../../db/chroma/queries/add';
 import { MongoQuery } from '../../db/mongo/queries/types';
 import { updateOne } from '../../db/mongo/queries/update';
-import { Source as MSource, SourceModel, SourceStatus } from '../../model/source';
+import { DataType, Source as MSource, SourceModel, SourceStatus } from '../../model/source';
+import { SocketEvents, emitEvent } from '../../socket';
 import { ServerError } from '../../utils/error';
 import logger from '../../utils/logger';
 import { PDF } from '../data/pdf';
@@ -16,7 +17,7 @@ export class Url implements Origin {
   public constructor() {}
 
   async add(sourceId: string, target: string, collection: Collection): Promise<MSource> {
-    const data = (await this.getContents(target)) as Data | null;
+    const { data, type } = await this.getContents(target);
     if (data === null) {
       throw new ServerError({
         status: 400,
@@ -26,7 +27,7 @@ export class Url implements Origin {
     }
     this.data = data;
 
-    const query: MongoQuery = { status: SourceStatus.LOADED };
+    const query: MongoQuery = { status: SourceStatus.LOADED, dataType: type };
     try {
       await addDocs(await this.data.getChromaLoaders(sourceId), collection);
     } catch (err) {
@@ -34,10 +35,16 @@ export class Url implements Origin {
       logger.error(err);
     }
     query['type'] = this.data.getType();
-    return updateOne(SourceModel, { _id: sourceId }, query) as Promise<MSource>;
+    const updatedSource = (await updateOne(SourceModel, { _id: sourceId }, query)) as MSource;
+    emitEvent(updatedSource.owner, SocketEvents.UPDATE, {
+      collection: SourceModel.collection.name,
+      id: updatedSource.id.toString(),
+      update: query,
+    });
+    return updatedSource;
   }
 
-  private async getContents(url: string): Promise<Data | null> {
+  private async getContents(url: string): Promise<{ data: Data | null; type: DataType }> {
     const response = (await Promise.race([
       fetch(url),
       new Promise((_, reject) =>
@@ -55,8 +62,7 @@ export class Url implements Origin {
       });
     }
     const contentType = this.getContentType(response.headers);
-    const data = await this.parseUrlContents(contentType, response);
-    return data;
+    return this.parseUrlContents(contentType, response);
   }
 
   private getContentType(header: Headers): string {
@@ -71,14 +77,17 @@ export class Url implements Origin {
     return contentType.split(';')[0];
   }
 
-  private async parseUrlContents(contentType: string, response: Response): Promise<Data | null> {
+  private async parseUrlContents(
+    contentType: string,
+    response: Response,
+  ): Promise<{ data: Data | null; type: DataType }> {
     switch (contentType) {
       case 'text/plain':
-        return null;
+        return { data: null, type: DataType.TEXT };
       case 'application/pdf':
-        return new PDF(await response.arrayBuffer());
+        return { data: new PDF(await response.arrayBuffer()), type: DataType.PDF };
       default:
-        return null;
+        return { data: null, type: DataType.NONE };
     }
   }
 }

@@ -5,6 +5,12 @@ import { verifyJWTSocket } from './middleware/auth';
 import { ServerError } from './utils/error';
 import logger from './utils/logger';
 
+export enum SocketEvents {
+  RESPONSE = 'response',
+  UPDATE = 'update',
+  EXCEPTION = 'exception',
+}
+
 export let io: Server = {} as Server;
 
 export function registerSocketServer(server: http.Server) {
@@ -24,4 +30,9 @@ export function registerSocketServer(server: http.Server) {
       socket.disconnect();
     }
   });
+}
+
+export function emitEvent(room: string, event: SocketEvents, data: Record<string, unknown>) {
+  console.log(room, event, data);
+  io.to(room).emit(event, data);
 }

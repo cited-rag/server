@@ -1,5 +1,7 @@
+import { parse as bestJsonParse } from 'best-effort-json-parser';
 import { Collection } from 'chromadb';
 import Joi from 'joi';
+import Stream from 'stream';
 import { createCollection } from '../db/chroma/queries/create';
 import { removeCollection } from '../db/chroma/queries/delete';
 import { findByIds, findCollection } from '../db/chroma/queries/find';
@@ -13,18 +15,21 @@ import { Chat, ChatModel } from '../model/chat';
 import { Conversation, ConversationModel } from '../model/conversation';
 import { Source, SourceModel } from '../model/source';
 import { User } from '../model/user';
+import { SocketEvents, emitEvent } from '../socket';
 import { ServerError } from '../utils/error';
 import { conversationFactory } from './conversations';
-import { LLM } from './llm';
-import { Prompt } from './prompt';
+import { Vertex } from './llm/vertex';
+import { QueryPrompt } from './prompt/query';
 import { QueryProps, QueryRes, SourceMetadata, SourceMetadataResponse } from './types';
 
 class ChatFactory {
+  private defaultName = 'New Chat';
+
   public async create(user: User): Promise<Chat> {
     const createdChat = await mongoCreate(ChatModel, {
-      name: 'New Chat',
+      name: this.defaultName,
       owner: user.id,
-    } as EnforcedDoc<Chat>);
+    } as unknown as EnforcedDoc<Chat>);
     if (createdChat === null) {
       throw new ServerError({
         status: 500,
@@ -82,9 +87,13 @@ class ChatFactory {
   }
 
   async updateName(chat: Chat, query: string): Promise<Chat> {
-    //TODO: send a websocket update on name change
-    if (chat.name === '') {
-      updateOne(ChatModel, { query }, { name: query }) as Promise<Chat>;
+    if (chat.name === this.defaultName) {
+      updateOne(ChatModel, { _id: chat.id }, { name: query }) as Promise<Chat>;
+      emitEvent(chat.owner, SocketEvents.UPDATE, {
+        collection: ChatModel.collection.name,
+        id: chat.id,
+        update: { name: query },
+      });
     }
     return chat;
   }
@@ -107,21 +116,35 @@ class ChatFactory {
     }
   }
 
+  private async parseReadStream(chat: Chat, readStream: Stream.Readable): Promise<string> {
+    let response: string = '';
+    let responseJson: Record<string, unknown> = {};
+    for await (const chunk of readStream) {
+      response += chunk;
+      responseJson = bestJsonParse(response);
+      emitEvent(chat.owner.toString(), SocketEvents.RESPONSE, {
+        chat: chat.id,
+        response: responseJson,
+      });
+    }
+    return response;
+  }
+
   private async makeQuery(queryProps: QueryProps): Promise<void> {
     const chat = await this.getById(queryProps.id);
     const collection = await this.getVector(queryProps.id);
     const ragSources = await queryCollection(queryProps.query, collection);
 
-    const promptBuilder = new Prompt(queryProps.id, queryProps.query, ragSources);
-    const llm = new LLM(promptBuilder, chat.owner);
-    const llmResponse = await llm.generate();
-    const jsonResponse = this.buildJsonResponse(llmResponse);
-    const conversation = await conversationFactory.create({
+    const promptBuilder = new QueryPrompt(queryProps.id, queryProps.query, ragSources);
+    const llm = new Vertex(promptBuilder);
+    const readStream = await llm.generate();
+    const stringResponse = await this.parseReadStream(chat, readStream);
+    const jsonResponse = this.buildJsonResponse(stringResponse);
+    await conversationFactory.create({
       chat: chat,
       query: queryProps.query,
       response: jsonResponse,
     });
-    //TODO: send a websocket update on new conversation
     void this.updateName(chat, queryProps.query);
   }
 

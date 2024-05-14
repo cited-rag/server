@@ -13,8 +13,8 @@ export type Conversation = {
 const ConversationSchema = new Schema(
   {
     target: String,
-    chat: Schema.Types.ObjectId,
-    owner: Schema.Types.ObjectId,
+    chat: String,
+    owner: String,
     query: String,
     response: String,
     sources: [String],
