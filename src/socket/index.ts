@@ -1,15 +1,10 @@
 import http from 'http';
 import { Server } from 'socket.io';
-import config from './config';
-import { verifyJWTSocket } from './middleware/auth';
-import { ServerError } from './utils/error';
-import logger from './utils/logger';
-
-export enum SocketEvents {
-  RESPONSE = 'response',
-  UPDATE = 'update',
-  EXCEPTION = 'exception',
-}
+import config from '../config';
+import { verifyJWTSocket } from '../middleware/auth';
+import { ServerError } from '../utils/error';
+import logger from '../utils/logger';
+import { SocketEvents, SocketMessage } from './types';
 
 export let io: Server = {} as Server;
 
@@ -32,7 +27,6 @@ export function registerSocketServer(server: http.Server) {
   });
 }
 
-export function emitEvent(room: string, event: SocketEvents, data: Record<string, unknown>) {
-  console.log(room, event, data);
+export function emitEvent(room: string, event: SocketEvents, data: SocketMessage) {
   io.to(room).emit(event, data);
 }

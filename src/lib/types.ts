@@ -12,8 +12,8 @@ export type QueryProps = {
 };
 
 export type QueryRes = {
-  response: string;
-  sources: string[];
+  response: string | null;
+  sources: string[] | null;
 };
 
 export type ConversationCreateProps = {

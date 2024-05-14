@@ -5,7 +5,8 @@ import {
 } from '@google/generative-ai';
 import Stream from 'stream';
 import { vertexAI } from '../../utils/vertex';
-import { LLM, Prompt } from '../types';
+import { Prompt } from '../prompt/types';
+import { LLM } from './types';
 
 export class Vertex implements LLM {
   private prompt: Prompt;

@@ -15,7 +15,8 @@ import { Chat, ChatModel } from '../model/chat';
 import { Conversation, ConversationModel } from '../model/conversation';
 import { Source, SourceModel } from '../model/source';
 import { User } from '../model/user';
-import { SocketEvents, emitEvent } from '../socket';
+import { emitEvent } from '../socket';
+import { SocketEvents, SocketExceptionAction } from '../socket/types';
 import { ServerError } from '../utils/error';
 import { conversationFactory } from './conversations';
 import { Vertex } from './llm/vertex';
@@ -108,11 +109,7 @@ class ChatFactory {
       Joi.assert(jsonResponse, validationSchema);
       return jsonResponse;
     } catch (err) {
-      throw new ServerError({
-        status: 400,
-        message: 'Invalid LLM response',
-        description: `LLM response is not valid: ${err}`,
-      });
+      return { response: null, sources: null };
     }
   }
 
@@ -140,6 +137,12 @@ class ChatFactory {
     const readStream = await llm.generate();
     const stringResponse = await this.parseReadStream(chat, readStream);
     const jsonResponse = this.buildJsonResponse(stringResponse);
+    if (jsonResponse.response === null) {
+      emitEvent(chat.owner, SocketEvents.EXCEPTION, {
+        action: SocketExceptionAction.QUERY,
+        message: `Query response was invalid`,
+      });
+    }
     await conversationFactory.create({
       chat: chat,
       query: queryProps.query,
