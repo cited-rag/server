@@ -47,8 +47,10 @@ export class Prompt {
 
   private addGuardRails(): void {
     this.prompt = `${[this.prompt]}\n
-    If the context does not contain the answer, answer "I don't know" \n 
-    If the question is not relevant to the context, answer "I don't know"`;
+    If the context does not contain the answer\n 
+    OR \n
+    If the question is not relevant to the context\n
+    Answer with "Sorry, I don't have an answer for that question" and give the reason why"`;
   }
 
   private addQuery(): void {
