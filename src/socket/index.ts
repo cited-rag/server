@@ -1,11 +1,12 @@
 import http from 'http';
 import { Server } from 'socket.io';
-import config from './config';
-import { verifyJWTSocket } from './middleware/auth';
-import { ServerError } from './utils/error';
-import logger from './utils/logger';
+import config from '../config';
+import { verifyJWTSocket } from '../middleware/auth';
+import { ServerError } from '../utils/error';
+import logger from '../utils/logger';
+import { SocketEvents, SocketMessage } from './types';
 
-export let io: Server | null = null;
+export let io: Server = {} as Server;
 
 export function registerSocketServer(server: http.Server) {
   io = new Server(server, {
@@ -24,4 +25,8 @@ export function registerSocketServer(server: http.Server) {
       socket.disconnect();
     }
   });
+}
+
+export function emitEvent(room: string, event: SocketEvents, data: SocketMessage) {
+  io.to(room).emit(event, data);
 }

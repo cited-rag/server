@@ -45,8 +45,8 @@ const SourceSchema = new Schema(
   {
     target: String,
     dataType: { type: String, enum: DataType },
-    chat: Schema.Types.ObjectId,
-    owner: Schema.Types.ObjectId,
+    chat: String,
+    owner: String,
     status: { type: String, enum: SourceStatus },
     origin: [OriginSchema],
   },

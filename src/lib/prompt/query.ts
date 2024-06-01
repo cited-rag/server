@@ -1,11 +1,11 @@
 import { QueryResponse } from 'chromadb';
 import _ from 'lodash';
-import { find } from '../db/mongo/queries/find';
-import { ConversationModel } from '../model/conversation';
-import { ServerError } from '../utils/error';
-import { PromptContext } from './types';
+import { find } from '../../db/mongo/queries/find';
+import { ConversationModel } from '../../model/conversation';
+import { ServerError } from '../../utils/error';
+import { Prompt, PromptContext } from './types';
 
-export class Prompt {
+export class QueryPrompt implements Prompt {
   private query: string;
   private prompt: string;
   private chatId: string;
