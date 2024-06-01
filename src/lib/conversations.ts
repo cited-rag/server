@@ -4,7 +4,7 @@ import { Conversation, ConversationModel } from '../model/conversation';
 import { ConversationCreateProps } from './types';
 
 export class ConversationFactory {
-  public static async create(props: ConversationCreateProps): Promise<Conversation | null> {
+  public async create(props: ConversationCreateProps): Promise<Conversation | null> {
     const conversation: Conversation = {
       sources: props.response.sources,
       chat: props.chat.id,
@@ -15,3 +15,5 @@ export class ConversationFactory {
     return create(ConversationModel, conversation as EnforcedDoc<Conversation>);
   }
 }
+
+export const conversationFactory = new ConversationFactory();

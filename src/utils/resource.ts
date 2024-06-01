@@ -2,6 +2,7 @@ import Router, { Middleware, RouterContext } from '@koa/router';
 import Joi from 'joi';
 import { Next } from 'koa';
 import _ from 'lodash';
+import { ServerError } from './error';
 
 export enum Methods {
   GET = 'get',
@@ -27,7 +28,11 @@ export function schemaValidator(schema: Joi.AnySchema): Middleware {
     try {
       Joi.assert(ctx.request.body, schema);
     } catch (err) {
-      throw `406: Invalid Schema`;
+      throw new ServerError({
+        status: 406,
+        message: 'Invalid Schema',
+        description: `Schema validation failed with error: ${err}`,
+      });
     }
     await next();
   };

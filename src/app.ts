@@ -7,6 +7,7 @@ import error from "./middleware/error";
 import openapi from "./middleware/openapi";
 import router from "./router";
 import logger from "./utils/logger";
+import config from "./config";
 
 const app = new Koa();
 
@@ -24,7 +25,7 @@ app.use(
 app.use(helmet());
 app.use(
 	cors({
-		origin: process.env.frontend_url, // replace with your client app's URL
+		origin: config.get('frontend_url'), // replace with your client app's URL
 		allowMethods: ["GET,HEAD,PUT,PATCH,POST,DELETE"],
 		allowHeaders: ["Content-Type", "Authorization"],
 		credentials: true,

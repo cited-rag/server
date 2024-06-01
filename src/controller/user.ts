@@ -1,11 +1,11 @@
 import { DefaultContext, Next } from 'koa';
-import { UserFactory } from '../lib/user';
+import { userFactory } from '../lib/user';
 import { verifyJWT } from '../middleware/auth';
 import { resource } from '../utils/resource';
 import { Methods } from './types';
 
 export async function deleteUser(ctx: DefaultContext, next: Next) {
-  ctx.body = { response: UserFactory.delete(ctx.user) };
+  ctx.body = { response: userFactory.delete(ctx.user) };
   next();
 }
 
@@ -15,7 +15,7 @@ export async function getMe(ctx: DefaultContext, next: Next) {
 }
 
 export async function getUserChats(ctx: DefaultContext, next: Next) {
-  ctx.body = await UserFactory.getChats(ctx.user);
+  ctx.body = await userFactory.getChats(ctx.user);
   next();
 }
 
@@ -29,14 +29,14 @@ export default resource([
   {
     path: '/me',
     controller: getMe,
-    method: Methods.GET,
+    method: Methods.POST,
     security: [verifyJWT],
     props: ['id', 'name'],
   },
   {
     path: '/chats',
     controller: getUserChats,
-    method: Methods.GET,
+    method: Methods.POST,
     security: [verifyJWT],
   },
 ]);

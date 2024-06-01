@@ -1,6 +1,5 @@
 import Joi from 'joi';
-import _ from 'lodash';
-import { LLMSource } from '../model/conversation';
+import { ServerError } from '../utils/error';
 import logger from '../utils/logger';
 import { vertexAI } from '../utils/vertex';
 import { Prompt } from './prompt';
@@ -16,7 +15,7 @@ export class LLM {
     const prompt = await this.prompt.generate();
     const response = await vertexAI.generate(prompt);
     const responseJSON = this.buildJsonResponse(response);
-    const sources = await this.buildLLMSources(responseJSON.sources);
+    const sources = responseJSON.sources;
     return { response: responseJSON.response, sources };
   }
 
@@ -31,25 +30,11 @@ export class LLM {
       return jsonResponse;
     } catch (err) {
       logger.info(response);
-      throw `400: Invalid LLM response`;
+      throw new ServerError({
+        status: 400,
+        message: 'Invalid LLM response',
+        description: `LLM response is not valid: ${err}`,
+      });
     }
-  }
-
-  private async buildLLMSources(sources: string[]): Promise<LLMSource[]> {
-    return sources.reduce((acc, v) => {
-      const sourceParts = v.split(':');
-      if (sourceParts.length !== 2) {
-        throw `400: Invalid source format`;
-      }
-      const source = _.find(acc, s => {
-        s.source === sourceParts[0];
-      }) as LLMSource | undefined;
-      if (!source) {
-        acc.push({ source: sourceParts[0], pages: [sourceParts[1]] });
-      } else {
-        source.pages.push(sourceParts[1]);
-      }
-      return acc;
-    }, [] as LLMSource[]);
   }
 }
