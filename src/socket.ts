@@ -10,7 +10,7 @@ export let io: Server | null = null;
 export function registerSocketServer(server: http.Server) {
   io = new Server(server, {
     cors: {
-      origin: process.env.frontend_url,
+      origin: config.get('frontend_url'),
     },
   });
   logger.info(`Socket server is listening on port:${config.get('api.port')}`);

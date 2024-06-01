@@ -107,8 +107,8 @@ const config = convict({
     format: String,
     doc: 'URL for the frontend',
     default: 'http://localhost:3000',
-    env: 'GOOGLE_FRONTEND_URL',
-    arg: 'google_frontend_url',
+    env: 'FRONTEND_URL',
+    arg: 'frontend_url',
   },
 });
 
